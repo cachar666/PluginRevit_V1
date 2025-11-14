@@ -1,0 +1,162 @@
+<Window x:Class="SINCO.ADPRO.Installer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="SINCO ADPRO - Instalador"
+        Height="550" Width="700"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <Style x:Key="ModernButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="25,10"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2980B9"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#BDC3C7"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#95A5A6"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#7F8C8D"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+            <Setter Property="Background" Value="#E74C3C"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#C0392B"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="30,25">
+            <StackPanel>
+                <TextBlock Text="SINCO ADPRO" FontSize="28" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Instalador para Autodesk Revit" FontSize="14" Foreground="#BDC3C7" Margin="0,5,0,0"/>
+                <TextBlock Text="Versión 1.0.0" FontSize="12" Foreground="#95A5A6" Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="30,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Instructions -->
+            <Border Grid.Row="0" Background="White" CornerRadius="8" Padding="20" Margin="0,0,0,15"
+                    BorderBrush="#BDC3C7" BorderThickness="1">
+                <StackPanel>
+                    <TextBlock Text="Instrucciones" FontSize="16" FontWeight="Bold" Foreground="#2C3E50"/>
+                    <TextBlock TextWrapping="Wrap" Margin="0,10,0,0" Foreground="#34495E" FontSize="13">
+                        Seleccione las versiones de Revit en las que desea instalar el plugin.
+                        El instalador detectará automáticamente las versiones instaladas y
+                        desinstalará versiones anteriores del plugin si existen.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!-- Versions List -->
+            <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="20"
+                    BorderBrush="#BDC3C7" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="Versiones de Revit Detectadas"
+                               FontSize="14" FontWeight="Bold" Foreground="#2C3E50" Margin="0,0,0,10"/>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="VersionsPanel">
+                            <TextBlock x:Name="NoVersionsText"
+                                       Text="No se detectaron versiones de Revit instaladas."
+                                       Foreground="#E74C3C"
+                                       FontSize="13"
+                                       Visibility="Collapsed"
+                                       Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Progress -->
+            <Border Grid.Row="2" Background="#ECF0F1" CornerRadius="4" Padding="15" Margin="0,15,0,0"
+                    x:Name="ProgressPanel" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock x:Name="ProgressText" Text="Instalando..." FontSize="12" Foreground="#34495E"/>
+                    <ProgressBar x:Name="ProgressBar" Height="6" Margin="0,8,0,0" IsIndeterminate="True"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Footer Buttons -->
+        <Border Grid.Row="2" Background="#ECF0F1" Padding="30,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Button Content="Desinstalar" Click="Uninstall_Click"
+                            Style="{StaticResource DangerButtonStyle}"
+                            x:Name="UninstallButton"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Instalar" Click="Install_Click"
+                            Style="{StaticResource ModernButtonStyle}"
+                            x:Name="InstallButton"/>
+                    <Button Content="Cerrar" Click="Close_Click"
+                            Style="{StaticResource SecondaryButtonStyle}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

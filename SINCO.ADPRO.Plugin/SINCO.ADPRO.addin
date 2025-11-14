@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>SINCO ADPRO</Name>
+    <Assembly>{ASSEMBLY_PATH}</Assembly>
+    <AddInId>A5B4C3D2-E1F0-4A5B-9C8D-7E6F5A4B3C2D</AddInId>
+    <FullClassName>SINCO.ADPRO.Plugin.Application</FullClassName>
+    <VendorId>SINCO</VendorId>
+    <VendorDescription>SINCO - Sistemas Integrados de Construcción</VendorDescription>
+    <Description>Plugin para extracción de cantidades y exportación a Excel</Description>
+  </AddIn>
+</RevitAddIns>
