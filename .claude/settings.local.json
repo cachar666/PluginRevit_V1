@@ -3,7 +3,9 @@
     "allow": [
       "Bash(build.bat)",
       "Bash(dotnet:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(dir \"C:\\Users\\CARLOS\\Documents\\PluginRevit\\SINCO.ADPRO.Plugin\\bin\\Release\\net48\")",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

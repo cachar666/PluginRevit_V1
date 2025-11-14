@@ -217,10 +217,22 @@ namespace SINCO.ADPRO.Installer.Services
                 string[] dependencies = new[]
                 {
                     "ClosedXML.dll",
+                    "ClosedXML.Parser.dll",
                     "DocumentFormat.OpenXml.dll",
+                    "DocumentFormat.OpenXml.Framework.dll",
                     "ExcelNumberFormat.dll",
                     "SixLabors.Fonts.dll",
-                    "XLParser.dll"
+                    "RBush.dll",
+                    "System.Buffers.dll",
+                    "System.Memory.dll",
+                    "System.Numerics.Vectors.dll",
+                    "System.Runtime.CompilerServices.Unsafe.dll",
+                    "Microsoft.Bcl.HashCode.dll",
+                    "Xceed.Wpf.Toolkit.dll",
+                    "Xceed.Wpf.AvalonDock.dll",
+                    "Xceed.Wpf.AvalonDock.Themes.Aero.dll",
+                    "Xceed.Wpf.AvalonDock.Themes.Metro.dll",
+                    "Xceed.Wpf.AvalonDock.Themes.VS2010.dll"
                 };
 
                 foreach (string dependency in dependencies)

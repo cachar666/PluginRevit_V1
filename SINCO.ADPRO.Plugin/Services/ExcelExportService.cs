@@ -127,7 +127,7 @@ namespace SINCO.ADPRO.Plugin.Services
         private bool IsNumericColumn(string columnName)
         {
             string[] numericColumns = { "Área", "Altura", "Longitud", "Volumen", "Densidad", "ID Elemento" };
-            return numericColumns.Any(nc => columnName.Contains(nc, StringComparison.OrdinalIgnoreCase));
+            return numericColumns.Any(nc => columnName.IndexOf(nc, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         /// <summary>
