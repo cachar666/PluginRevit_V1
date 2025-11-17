@@ -1,4 +1,5 @@
 using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 using SINCO.ADPRO.Plugin.Models;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,9 @@ namespace SINCO.ADPRO.Plugin.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly Document _document;
+        private readonly UIDocument _uidocument;
         private string _statusMessage;
+        private FilterType _selectedFilter;
 
         public ObservableCollection<CategoryNode> Categories { get; set; }
         public ObservableCollection<PropertyItem> Properties { get; set; }
@@ -32,11 +35,27 @@ namespace SINCO.ADPRO.Plugin.ViewModels
             }
         }
 
-        public MainViewModel(Document document)
+        public FilterType SelectedFilter
+        {
+            get => _selectedFilter;
+            set
+            {
+                if (_selectedFilter != value)
+                {
+                    _selectedFilter = value;
+                    OnPropertyChanged(nameof(SelectedFilter));
+                    LoadCategories(); // Recargar categorías con el nuevo filtro
+                }
+            }
+        }
+
+        public MainViewModel(Document document, UIDocument uidocument)
         {
             _document = document;
+            _uidocument = uidocument;
             Categories = new ObservableCollection<CategoryNode>();
             Properties = new ObservableCollection<PropertyItem>();
+            _selectedFilter = FilterType.OnlyKeynote; // Filtro por defecto
 
             InitializeProperties();
             LoadCategories();
@@ -69,18 +88,25 @@ namespace SINCO.ADPRO.Plugin.ViewModels
         }
 
         /// <summary>
-        /// Carga las categorías y familias del documento
+        /// Carga las categorías y familias del documento (solo elementos visibles en la vista activa)
         /// </summary>
         private void LoadCategories()
         {
             try
             {
-                StatusMessage = "Cargando categorías...";
+                StatusMessage = "Cargando categorías de la vista activa...";
+                Categories.Clear();
 
-                // Obtener todas las categorías con elementos en el documento
-                Dictionary<string, CategoryNode> categoryDict = new Dictionary<string, CategoryNode>();
+                // Obtener la vista activa
+                View activeView = _uidocument.ActiveView;
+                if (activeView == null)
+                {
+                    StatusMessage = "No hay una vista activa";
+                    return;
+                }
 
-                FilteredElementCollector collector = new FilteredElementCollector(_document)
+                // Crear colector solo con elementos visibles en la vista activa
+                FilteredElementCollector collector = new FilteredElementCollector(_document, activeView.Id)
                     .WhereElementIsNotElementType();
 
                 // Agrupar elementos por categoría
@@ -99,6 +125,7 @@ namespace SINCO.ADPRO.Plugin.ViewModels
                         Name = categoryName,
                         CategoryId = categoryGroup.First().Category.Id.ToString(),
                         IsCategory = true,
+                        IsMaterial = false,
                         IsSelected = true
                     };
 
@@ -119,31 +146,84 @@ namespace SINCO.ADPRO.Plugin.ViewModels
                         if (string.IsNullOrEmpty(familyGroup.Key))
                             continue;
 
+                        // Obtener el primer tipo para verificar Keynote y AssemblyCode
+                        var firstType = familyGroup.First().Type;
+                        string keynote = GetParameterValue(firstType, BuiltInParameter.KEYNOTE_PARAM);
+                        string assemblyCode = GetParameterValue(firstType, BuiltInParameter.UNIFORMAT_CODE);
+
+                        bool hasKeynote = !string.IsNullOrWhiteSpace(keynote);
+                        bool hasAssemblyCode = !string.IsNullOrWhiteSpace(assemblyCode);
+
+                        // Aplicar filtro - SIEMPRE filtrar
+                        if (!PassesFilter(hasKeynote, hasAssemblyCode))
+                            continue;
+
                         CategoryNode familyNode = new CategoryNode
                         {
                             Name = familyGroup.Key,
                             CategoryId = categoryNode.CategoryId,
                             IsCategory = false,
+                            IsMaterial = false,
                             IsSelected = true,
-                            Parent = categoryNode
+                            Parent = categoryNode,
+                            HasKeynote = hasKeynote,
+                            HasAssemblyCode = hasAssemblyCode,
+                            Keynote = keynote,
+                            AssemblyCode = assemblyCode
                         };
 
                         categoryNode.Children.Add(familyNode);
                     }
 
-                    // Solo agregar categorías que tengan familias
+                    // Solo agregar categorías que tengan familias que pasen el filtro
                     if (categoryNode.Children.Count > 0)
                     {
                         Categories.Add(categoryNode);
                     }
                 }
 
-                StatusMessage = $"Cargadas {Categories.Count} categorías con {Categories.Sum(c => c.Children.Count)} familias";
+                int totalFamilies = Categories.Sum(c => c.Children.Count);
+                StatusMessage = $"Vista activa: {activeView.Name} - {Categories.Count} categorías con {totalFamilies} familias";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error al cargar categorías: {ex.Message}";
             }
+        }
+
+        /// <summary>
+        /// Verifica si un elemento pasa el filtro seleccionado
+        /// </summary>
+        private bool PassesFilter(bool hasKeynote, bool hasAssemblyCode)
+        {
+            switch (SelectedFilter)
+            {
+                case FilterType.OnlyKeynote:
+                    return hasKeynote;
+                case FilterType.OnlyAssemblyCode:
+                    return hasAssemblyCode;
+                case FilterType.KeynoteOrAssemblyCode:
+                    return hasKeynote || hasAssemblyCode; // Al menos uno
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el valor de un parámetro
+        /// </summary>
+        private string GetParameterValue(Element element, BuiltInParameter parameter)
+        {
+            try
+            {
+                Parameter param = element?.get_Parameter(parameter);
+                if (param != null && param.HasValue)
+                {
+                    return param.AsValueString() ?? param.AsString() ?? "";
+                }
+            }
+            catch { }
+            return "";
         }
 
         /// <summary>

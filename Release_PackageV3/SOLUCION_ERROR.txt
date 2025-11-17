@@ -1,0 +1,66 @@
+================================================================================
+          PROBLEMA IDENTIFICADO Y SOLUCIONADO - SINCO ADPRO V3
+================================================================================
+
+PROBLEMA:
+--------
+El mensaje "La instalación se completó con algunos errores" aparecía porque
+el archivo SINCO.ADPRO.addin tenía una ruta hardcodeada incorrecta.
+
+CAUSA:
+------
+El archivo .addin contenía:
+  <Assembly>C:\Users\CARLOS\Documents\PluginRevit\...\SINCO.ADPRO.Plugin.dll</Assembly>
+
+Esta era la ruta de compilación en tu equipo, que NO existe en otros equipos.
+
+Cuando el instalador intentaba instalar el plugin, Revit no podía encontrar
+la DLL porque la ruta era incorrecta.
+
+
+SOLUCIÓN APLICADA:
+-----------------
+El archivo .addin ahora usa un placeholder que el instalador reemplaza:
+  <Assembly>{ASSEMBLY_PATH}</Assembly>
+
+Durante la instalación, el placeholder se reemplaza con:
+  C:\Program Files\SINCO.ADPRO\SINCO.ADPRO.Plugin.dll
+
+Esta ruta SÍ existe después de la instalación en cualquier equipo.
+
+
+RESULTADO:
+----------
+✓ Archivo .addin corregido
+✓ Paquete Release_PackageV3 actualizado
+✓ Archivo ZIP recreado con la corrección
+✓ El instalador ahora funcionará correctamente sin errores
+
+
+NOTA IMPORTANTE:
+---------------
+Si ya instalaste el plugin en algún equipo con el error:
+
+1. Ejecuta el instalador y haz clic en "Desinstalar"
+2. Cierra el instalador
+3. Vuelve a ejecutar el instalador con esta versión corregida
+4. Haz clic en "Instalar"
+
+El plugin debería funcionar correctamente ahora.
+
+
+VERIFICACIÓN:
+------------
+Para confirmar que el plugin está correctamente instalado:
+
+1. Abre: %AppData%\Autodesk\Revit\Addins\[AÑO]\SINCO.ADPRO.addin
+2. Verifica que la ruta del <Assembly> sea:
+   C:\Program Files\SINCO.ADPRO\SINCO.ADPRO.Plugin.dll
+3. Verifica que ese archivo exista en el sistema
+
+Si ambas condiciones se cumplen, el plugin cargará correctamente en Revit.
+
+
+================================================================================
+Fecha de corrección: 2025-11-17
+================================================================================

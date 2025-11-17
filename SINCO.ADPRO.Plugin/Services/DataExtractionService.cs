@@ -1,4 +1,5 @@
 using Autodesk.Revit.DB;
+using Autodesk.Revit.UI;
 using SINCO.ADPRO.Plugin.Models;
 using System;
 using System.Collections.Generic;
@@ -7,32 +8,43 @@ using System.Linq;
 namespace SINCO.ADPRO.Plugin.Services
 {
     /// <summary>
-    /// Servicio para extraer datos de elementos de Revit
+    /// Servicio para extraer datos de elementos de Revit (solo vista activa)
     /// </summary>
     public class DataExtractionService
     {
         private readonly Document _document;
+        private readonly UIDocument _uidocument;
 
-        public DataExtractionService(Document document)
+        public DataExtractionService(Document document, UIDocument uidocument)
         {
             _document = document;
+            _uidocument = uidocument;
         }
 
         /// <summary>
         /// Extrae datos de los elementos según las categorías y propiedades seleccionadas
+        /// Incluye elementos de la vista activa Y materiales como registros separados
         /// </summary>
         public List<Dictionary<string, string>> ExtractData(
             IEnumerable<CategoryNode> selectedCategories,
-            IEnumerable<PropertyItem> selectedProperties)
+            IEnumerable<PropertyItem> selectedProperties,
+            FilterType filterType)
         {
             var results = new List<Dictionary<string, string>>();
 
             try
             {
-                // Obtener las familias seleccionadas agrupadas por categoría
+                // Obtener la vista activa
+                View activeView = _uidocument.ActiveView;
+                if (activeView == null)
+                {
+                    throw new Exception("No hay una vista activa");
+                }
+
+                // Obtener las familias seleccionadas
                 var selectedFamilies = selectedCategories
                     .Where(c => c.IsCategory && c.IsSelected)
-                    .SelectMany(c => c.Children.Where(f => f.IsSelected))
+                    .SelectMany(c => c.Children.Where(f => f.IsSelected && !f.IsMaterial))
                     .ToList();
 
                 // Obtener las categorías sin hijos seleccionadas
@@ -40,10 +52,15 @@ namespace SINCO.ADPRO.Plugin.Services
                     .Where(c => c.IsCategory && c.IsSelected && !c.Children.Any(f => f.IsSelected))
                     .ToList();
 
-                // Crear colector de elementos
-                FilteredElementCollector collector = new FilteredElementCollector(_document)
+                // Crear colector solo con elementos visibles en la vista activa
+                FilteredElementCollector collector = new FilteredElementCollector(_document, activeView.Id)
                     .WhereElementIsNotElementType();
 
+                // Conjunto para rastrear materiales únicos procesados
+                HashSet<ElementId> processedMaterials = new HashSet<ElementId>();
+                Dictionary<ElementId, MaterialData> materialQuantities = new Dictionary<ElementId, MaterialData>();
+
+                // PASO 1: Extraer elementos y acumular datos de materiales
                 foreach (var element in collector)
                 {
                     if (element.Category == null)
@@ -60,12 +77,10 @@ namespace SINCO.ADPRO.Plugin.Services
                     // Verificar si el elemento pertenece a una familia seleccionada
                     bool isSelected = false;
 
-                    // Verificar por familia
                     if (selectedFamilies.Any(f => f.Parent.Name == categoryName && f.Name == familyName))
                     {
                         isSelected = true;
                     }
-                    // Verificar por categoría completa
                     else if (selectedCategoriesOnly.Any(c => c.Name == categoryName))
                     {
                         isSelected = true;
@@ -75,8 +90,34 @@ namespace SINCO.ADPRO.Plugin.Services
                         continue;
 
                     // Extraer propiedades del elemento
-                    var elementData = ExtractElementProperties(element, elementType, selectedProperties);
+                    var elementData = ExtractElementProperties(element, elementType, selectedProperties, null);
                     results.Add(elementData);
+
+                    // Acumular datos de materiales de este elemento
+                    AccumulateMaterialData(element, elementType, materialQuantities);
+                }
+
+                // PASO 2: Agregar registros de materiales que cumplan con el filtro
+                foreach (var materialData in materialQuantities.Values)
+                {
+                    Material material = _document.GetElement(materialData.MaterialId) as Material;
+                    if (material == null)
+                        continue;
+
+                    // Obtener Keynote y AssemblyCode del material
+                    string keynote = GetParameterValue(material, BuiltInParameter.KEYNOTE_PARAM);
+                    string assemblyCode = GetParameterValue(material, BuiltInParameter.UNIFORMAT_CODE);
+
+                    bool hasKeynote = !string.IsNullOrWhiteSpace(keynote);
+                    bool hasAssemblyCode = !string.IsNullOrWhiteSpace(assemblyCode);
+
+                    // Aplicar filtro
+                    if (!PassesFilter(hasKeynote, hasAssemblyCode, filterType))
+                        continue;
+
+                    // Crear registro de material
+                    var materialRecord = CreateMaterialRecord(material, materialData, selectedProperties, keynote, assemblyCode);
+                    results.Add(materialRecord);
                 }
             }
             catch (Exception ex)
@@ -88,18 +129,150 @@ namespace SINCO.ADPRO.Plugin.Services
         }
 
         /// <summary>
+        /// Acumula datos de materiales de un elemento (volumen, área)
+        /// </summary>
+        private void AccumulateMaterialData(Element element, ElementType elementType, Dictionary<ElementId, MaterialData> materialQuantities)
+        {
+            try
+            {
+                // Obtener geometría del elemento
+                Options geoOptions = new Options();
+                geoOptions.DetailLevel = ViewDetailLevel.Fine;
+                geoOptions.ComputeReferences = false;
+                GeometryElement geoElement = element.get_Geometry(geoOptions);
+
+                if (geoElement != null)
+                {
+                    foreach (GeometryObject geoObj in geoElement)
+                    {
+                        ProcessGeometryObject(geoObj, materialQuantities);
+                    }
+                }
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// Procesa un objeto de geometría para extraer materiales
+        /// </summary>
+        private void ProcessGeometryObject(GeometryObject geoObj, Dictionary<ElementId, MaterialData> materialQuantities)
+        {
+            if (geoObj is Solid solid && solid.Volume > 0)
+            {
+                foreach (Face face in solid.Faces)
+                {
+                    ElementId matId = face.MaterialElementId;
+                    if (matId != null && matId != ElementId.InvalidElementId)
+                    {
+                        if (!materialQuantities.ContainsKey(matId))
+                        {
+                            materialQuantities[matId] = new MaterialData { MaterialId = matId };
+                        }
+
+                        // Acumular área y volumen
+                        materialQuantities[matId].TotalArea += face.Area;
+                        materialQuantities[matId].TotalVolume += solid.Volume / solid.Faces.Size; // Aproximado
+                    }
+                }
+            }
+            else if (geoObj is GeometryInstance instance)
+            {
+                GeometryElement instGeometry = instance.GetInstanceGeometry();
+                if (instGeometry != null)
+                {
+                    foreach (GeometryObject instObj in instGeometry)
+                    {
+                        ProcessGeometryObject(instObj, materialQuantities);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Crea un registro de material para el Excel
+        /// </summary>
+        private Dictionary<string, string> CreateMaterialRecord(
+            Material material,
+            MaterialData data,
+            IEnumerable<PropertyItem> properties,
+            string keynote,
+            string assemblyCode)
+        {
+            var record = new Dictionary<string, string>();
+
+            foreach (var prop in properties)
+            {
+                string value = "";
+
+                switch (prop.Name)
+                {
+                    case "ID Elemento":
+                        value = material.Id.ToString();
+                        break;
+                    case "Nombre del Elemento":
+                        value = material.Name;
+                        break;
+                    case "Categoría":
+                        value = "Materiales";
+                        break;
+                    case "Familia y Tipo":
+                        value = "Materiales";
+                        break;
+                    case "Assembly Code":
+                        value = assemblyCode;
+                        break;
+                    case "Keynote":
+                        value = keynote;
+                        break;
+                    case "Área":
+                        value = FormatArea(data.TotalArea);
+                        break;
+                    case "Volumen":
+                        value = FormatVolume(data.TotalVolume);
+                        break;
+                    default:
+                        value = "";
+                        break;
+                }
+
+                record[prop.Name] = value;
+            }
+
+            return record;
+        }
+
+        /// <summary>
+        /// Verifica si un elemento pasa el filtro seleccionado
+        /// </summary>
+        private bool PassesFilter(bool hasKeynote, bool hasAssemblyCode, FilterType filterType)
+        {
+            switch (filterType)
+            {
+                case FilterType.OnlyKeynote:
+                    return hasKeynote;
+                case FilterType.OnlyAssemblyCode:
+                    return hasAssemblyCode;
+                case FilterType.KeynoteOrAssemblyCode:
+                    return hasKeynote || hasAssemblyCode;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
         /// Extrae las propiedades de un elemento específico
         /// </summary>
         private Dictionary<string, string> ExtractElementProperties(
             Element element,
             ElementType elementType,
-            IEnumerable<PropertyItem> properties)
+            IEnumerable<PropertyItem> properties,
+            string materialName = null)
         {
             var data = new Dictionary<string, string>();
 
             foreach (var prop in properties)
             {
-                string value = GetPropertyValue(element, elementType, prop.Name);
+                string value = GetPropertyValue(element, elementType, prop.Name, materialName);
                 data[prop.Name] = value;
             }
 
@@ -109,7 +282,7 @@ namespace SINCO.ADPRO.Plugin.Services
         /// <summary>
         /// Obtiene el valor de una propiedad específica
         /// </summary>
-        private string GetPropertyValue(Element element, ElementType elementType, string propertyName)
+        private string GetPropertyValue(Element element, ElementType elementType, string propertyName, string materialName = null)
         {
             try
             {
@@ -194,14 +367,12 @@ namespace SINCO.ADPRO.Plugin.Services
         {
             try
             {
-                // Buscar en parámetros de instancia
                 Parameter param = element.LookupParameter(parameterName);
                 if (param != null && param.HasValue)
                 {
                     return param.AsValueString() ?? param.AsString() ?? "";
                 }
 
-                // Buscar en parámetros de tipo
                 ElementType type = _document.GetElement(element.GetTypeId()) as ElementType;
                 if (type != null)
                 {
@@ -248,7 +419,6 @@ namespace SINCO.ADPRO.Plugin.Services
         {
             try
             {
-                // Intentar diferentes parámetros de altura
                 Parameter param = element.get_Parameter(BuiltInParameter.GENERIC_HEIGHT);
                 if (param == null || !param.HasValue)
                     param = element.LookupParameter("Altura");
@@ -266,7 +436,6 @@ namespace SINCO.ADPRO.Plugin.Services
         {
             try
             {
-                // Intentar diferentes parámetros de longitud
                 Parameter param = element.get_Parameter(BuiltInParameter.CURVE_ELEM_LENGTH);
                 if (param == null || !param.HasValue)
                     param = element.get_Parameter(BuiltInParameter.GENERIC_WIDTH);
@@ -298,7 +467,6 @@ namespace SINCO.ADPRO.Plugin.Services
         {
             try
             {
-                // Intentar obtener la densidad del material
                 ElementType type = _document.GetElement(element.GetTypeId()) as ElementType;
                 if (type != null)
                 {
@@ -309,8 +477,6 @@ namespace SINCO.ADPRO.Plugin.Services
                         Material material = _document.GetElement(materialId) as Material;
                         if (material != null)
                         {
-                            // La densidad no está directamente disponible en la API básica
-                            // Retornar el nombre del material
                             return material.Name;
                         }
                     }
@@ -319,5 +485,29 @@ namespace SINCO.ADPRO.Plugin.Services
             catch { }
             return "";
         }
+
+        private string FormatArea(double areaInSquareFeet)
+        {
+            if (areaInSquareFeet == 0)
+                return "";
+            return $"{areaInSquareFeet:F2} ft²";
+        }
+
+        private string FormatVolume(double volumeInCubicFeet)
+        {
+            if (volumeInCubicFeet == 0)
+                return "";
+            return $"{volumeInCubicFeet:F2} ft³";
+        }
+    }
+
+    /// <summary>
+    /// Datos acumulados de un material
+    /// </summary>
+    internal class MaterialData
+    {
+        public ElementId MaterialId { get; set; }
+        public double TotalArea { get; set; }
+        public double TotalVolume { get; set; }
     }
 }

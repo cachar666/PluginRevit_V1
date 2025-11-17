@@ -13,7 +13,12 @@ namespace SINCO.ADPRO.Plugin.Models
 
         public string Name { get; set; }
         public string CategoryId { get; set; }
-        public bool IsCategory { get; set; } // true = Categoría, false = Familia
+        public bool IsCategory { get; set; } // true = Categoría, false = Familia/Material
+        public bool IsMaterial { get; set; } // true = Material, false = Familia
+        public bool HasKeynote { get; set; } // Indica si tiene Keynote
+        public bool HasAssemblyCode { get; set; } // Indica si tiene AssemblyCode
+        public string Keynote { get; set; } // Valor del Keynote
+        public string AssemblyCode { get; set; } // Valor del AssemblyCode
         public ObservableCollection<CategoryNode> Children { get; set; }
         public CategoryNode Parent { get; set; }
 

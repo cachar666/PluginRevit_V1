@@ -52,4 +52,14 @@ namespace SINCO.ADPRO.Plugin.Models
         ProjectParameter,// Parámetros de proyecto
         FamilyParameter // Parámetros de familia
     }
+
+    /// <summary>
+    /// Tipos de filtro para categorías/familias y materiales
+    /// </summary>
+    public enum FilterType
+    {
+        OnlyKeynote,          // Solo elementos con Keynote
+        OnlyAssemblyCode,     // Solo elementos con AssemblyCode
+        KeynoteOrAssemblyCode // Elementos con Keynote O AssemblyCode (al menos uno)
+    }
 }

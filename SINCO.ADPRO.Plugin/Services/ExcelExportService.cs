@@ -42,8 +42,14 @@ namespace SINCO.ADPRO.Plugin.Services
                     worksheet.Cell(3, 1).Style.Font.Italic = true;
                     worksheet.Range(3, 1, 3, columnHeaders.Count).Merge();
 
+                    // Contenido del Excel
+                    worksheet.Cell(4, 1).Value = "Contenido: Categorías/Familias + Materiales (solo elementos visibles en vista activa)";
+                    worksheet.Cell(4, 1).Style.Font.Bold = true;
+                    worksheet.Cell(4, 1).Style.Font.FontColor = XLColor.FromArgb(0, 112, 192);
+                    worksheet.Range(4, 1, 4, columnHeaders.Count).Merge();
+
                     // Fila vacía
-                    int currentRow = 5;
+                    int currentRow = 6;
 
                     // Encabezados de columnas
                     for (int i = 0; i < columnHeaders.Count; i++)

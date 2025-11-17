@@ -31,7 +31,7 @@ namespace SINCO.ADPRO.Plugin.Views
             _document = document;
             _uidocument = uidocument;
 
-            _viewModel = new MainViewModel(_document);
+            _viewModel = new MainViewModel(_document, _uidocument);
             DataContext = _viewModel;
         }
 
@@ -125,11 +125,12 @@ namespace SINCO.ADPRO.Plugin.Views
                 // Mostrar mensaje de progreso
                 _viewModel.StatusMessage = "Extrayendo datos del modelo...";
 
-                // Extraer datos
-                DataExtractionService extractionService = new DataExtractionService(_document);
+                // Extraer datos (elementos + materiales de la vista activa)
+                DataExtractionService extractionService = new DataExtractionService(_document, _uidocument);
                 List<Dictionary<string, string>> data = extractionService.ExtractData(
                     selectedCategories,
-                    selectedProperties);
+                    selectedProperties,
+                    _viewModel.SelectedFilter);
 
                 if (data.Count == 0)
                 {

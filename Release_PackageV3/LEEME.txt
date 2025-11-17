@@ -1,0 +1,63 @@
+================================================================================
+                    SINCO ADPRO - PLUGIN PARA REVIT
+                   Instalador V3 - Noviembre 2025
+================================================================================
+
+CONTENIDO DEL PAQUETE:
+---------------------
+✓ SINCO.ADPRO.Installer.exe  - Instalador principal
+✓ SINCO.ADPRO.Plugin.dll      - Plugin compilado para Revit
+✓ SINCO.ADPRO.addin           - Archivo de configuración
+✓ Resources\                  - Carpeta con recursos (logo)
+✓ Todas las dependencias necesarias (ClosedXML, Xceed, etc.)
+
+
+INSTRUCCIONES DE INSTALACIÓN:
+-----------------------------
+1. Copia TODA la carpeta "Release_PackageV3" al equipo donde deseas instalar
+
+2. Ejecuta el archivo: SINCO.ADPRO.Installer.exe
+   - No requiere permisos de administrador
+   - Se abrirá una ventana con el instalador gráfico
+
+3. Selecciona las versiones de Revit donde deseas instalar el plugin
+   - El instalador detecta automáticamente las versiones instaladas
+   - Puedes seleccionar múltiples versiones
+
+4. Haz clic en "Instalar"
+   - El instalador copiará los archivos necesarios
+   - Creará los archivos .addin en cada versión de Revit seleccionada
+
+5. Abre Revit
+   - El plugin aparecerá en la pestaña "Complementos"
+   - Busca el botón "SINCO ADPRO"
+
+
+UBICACIÓN DE INSTALACIÓN:
+-------------------------
+- Archivos del plugin: C:\Program Files\SINCO.ADPRO\
+- Configuración Revit: %AppData%\Autodesk\Revit\Addins\[AÑO]\SINCO.ADPRO.addin
+- Log de instalación: C:\ProgramData\SINCO_ADPRO\log.txt
+
+
+DESINSTALACIÓN:
+--------------
+- Ejecuta SINCO.ADPRO.Installer.exe y haz clic en "Desinstalar"
+- También puedes usar: C:\Program Files\SINCO.ADPRO\Uninstall.bat
+
+
+REQUISITOS:
+----------
+- Windows 10/11
+- Autodesk Revit 2020 o superior
+- .NET Framework 4.8 (ya incluido en Revit)
+
+
+SOPORTE TÉCNICO:
+---------------
+Para reportar problemas o consultas:
+- Revisa el log: C:\ProgramData\SINCO_ADPRO\log.txt
+- Contacta con el equipo de desarrollo
+
+
+================================================================================

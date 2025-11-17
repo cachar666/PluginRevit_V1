@@ -5,7 +5,9 @@
       "Bash(dotnet:*)",
       "Bash(find:*)",
       "Bash(dir \"C:\\Users\\CARLOS\\Documents\\PluginRevit\\SINCO.ADPRO.Plugin\\bin\\Release\\net48\")",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(cat:*)",
+      "Bash(powershell -Command \"Compress-Archive -Path ''Release_PackageV3\\*'' -DestinationPath ''SINCO.ADPRO.V3.Installer.zip'' -Force\")"
     ],
     "deny": [],
     "ask": []

@@ -32,4 +32,11 @@
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.6.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Copiar carpeta Resources al directorio de salida -->
+    <None Include="Resources\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

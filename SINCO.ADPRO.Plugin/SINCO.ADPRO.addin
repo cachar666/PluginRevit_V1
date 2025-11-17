@@ -2,7 +2,7 @@
 <RevitAddIns>
   <AddIn Type="Application">
     <Name>SINCO ADPRO</Name>
-    <Assembly>C:\Users\CARLOS\Documents\PluginRevit\SINCO.ADPRO.Plugin\bin\Release\net48\SINCO.ADPRO.Plugin.dll</Assembly>
+    <Assembly>{ASSEMBLY_PATH}</Assembly>
     <AddInId>A5B4C3D2-E1F0-4A5B-9C8D-7E6F5A4B3C2D</AddInId>
     <FullClassName>SINCO.ADPRO.Plugin.Application</FullClassName>
     <VendorId>SINCO</VendorId>

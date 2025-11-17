@@ -245,6 +245,22 @@ namespace SINCO.ADPRO.Installer.Services
                         Log($"  - Dependencia copiada: {dependency}");
                     }
                 }
+
+                // Copiar carpeta Resources (contiene el logo)
+                string sourceResourcesDir = Path.Combine(sourceDir, "Resources");
+                if (Directory.Exists(sourceResourcesDir))
+                {
+                    string targetResourcesDir = Path.Combine(targetDir, "Resources");
+                    Directory.CreateDirectory(targetResourcesDir);
+
+                    foreach (string file in Directory.GetFiles(sourceResourcesDir))
+                    {
+                        string fileName = Path.GetFileName(file);
+                        string targetPath = Path.Combine(targetResourcesDir, fileName);
+                        File.Copy(file, targetPath, true);
+                        Log($"  - Recurso copiado: Resources/{fileName}");
+                    }
+                }
             }
             catch (Exception ex)
             {
